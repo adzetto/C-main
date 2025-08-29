@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <vector>
 #include <chrono>
 #include <thread>
 #include <iomanip>
