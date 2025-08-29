@@ -17,7 +17,7 @@
 #include <queue>
 
 class AdvancedVehicleDynamicsControl {
-private:
+public:
     enum class VehicleMode {
         COMFORT,
         SPORT,
@@ -560,7 +560,7 @@ public:
         aerodynamics.frontSpoiler.active = true;
         aerodynamics.rearWing.angle = 5.0f;             // degrees
         aerodynamics.rearWing.drsActive = false;
-        aerodynamics.rearWing.active = true;
+        aerodynamics.rearWing.drsActive = true;
         aerodynamics.sideVanes.angle = 0.0f;
         aerodynamics.sideVanes.active = false;
         aerodynamics.underfloorPanels.groundClearance = 120.0f; // mm
@@ -1903,7 +1903,7 @@ private:
         std::cout << "    Front Spoiler: " << aerodynamics.frontSpoiler.angle << "° " 
                   << (aerodynamics.frontSpoiler.active ? "ACTIVE" : "INACTIVE") << std::endl;
         std::cout << "    Rear Wing: " << aerodynamics.rearWing.angle << "° " 
-                  << (aerodynamics.rearWing.active ? "ACTIVE" : "INACTIVE") << std::endl;
+                  << (aerodynamics.rearWing.drsActive ? "ACTIVE" : "INACTIVE") << std::endl;
         std::cout << "    DRS: " << (aerodynamics.rearWing.drsActive ? "ACTIVE" : "INACTIVE") << std::endl;
         
         std::cout << "  Roll Stabilization: " << (rollStab.enabled ? "ENABLED" : "DISABLED") << std::endl;

@@ -15,7 +15,7 @@
 #include <functional>
 
 class AdvancedPowertrainControl {
-private:
+public:
     enum class DriveMode {
         ECO,
         COMFORT,

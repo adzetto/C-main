@@ -15,6 +15,7 @@
 #include <chrono>
 #include <thread>
 #include <memory>
+#include <iomanip>
 
 enum class CellState {
     HEALTHY,

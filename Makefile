@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++11 -Wall -Wextra -O2 -pthread
+CXXFLAGS = -std=c++17 -Wall -Wextra -O2 -pthread
 TARGET_DIR = bin
 TARGETS = ev_controller charging_station ev_system_demo
 

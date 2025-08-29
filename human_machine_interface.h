@@ -8,6 +8,7 @@
 #include <chrono>
 #include <memory>
 #include <queue>
+#include <sstream>
 #include <thread>
 #include <mutex>
 #include <functional>
@@ -30,6 +31,7 @@ private:
         AUTO_ROTATE
     };
 
+public:
     enum class AlertType {
         INFO,
         WARNING,
@@ -37,6 +39,7 @@ private:
         MAINTENANCE,
         NAVIGATION
     };
+private:
 
     enum class InputMethod {
         TOUCH,

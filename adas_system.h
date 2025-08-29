@@ -28,55 +28,7 @@
 #include <cmath>
 #include <functional>
 
-// Forward declarations
-class VehicleState;
-class SensorFusion;
-class PathPlanner;
-class MotionController;
-
-/**
- * @brief Represents the state of the vehicle.
- */
-class VehicleState {
-public:
-    double speed;
-    double acceleration;
-    double steering_angle;
-    // other vehicle state variables
-};
-
-/**
- * @brief Fuses data from various sensors (camera, radar, lidar, etc.).
- */
-class SensorFusion {
-public:
-    void process() {
-        // Sensor fusion logic
-    }
-    // other sensor fusion methods
-};
-
-/**
- * @brief Plans the path for the vehicle.
- */
-class PathPlanner {
-public:
-    void plan() {
-        // Path planning logic
-    }
-    // other path planning methods
-};
-
-/**
- * @brief Controls the motion of the vehicle.
- */
-class MotionController {
-public:
-    void control() {
-        // Motion control logic
-    }
-    // other motion control methods
-};
+#include "common_defs.h"
 
 /**
  * @brief Adaptive Cruise Control (ACC) system.
