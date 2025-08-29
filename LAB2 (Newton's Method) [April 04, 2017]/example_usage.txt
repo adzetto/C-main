@@ -1,0 +1,1 @@
+"Lab2 - Newton's Method.exe" 10e-30 0.00001 4 2 -3.5 -3 3.5 1
