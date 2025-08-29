@@ -19,6 +19,10 @@ $(TARGET_DIR)/charging_station: charging_station.cpp
 $(TARGET_DIR)/ev_system_demo: ev_system_demo.cpp adas_system.h advanced_bms.h advanced_powertrain_control.h advanced_vehicle_dynamics.h autonomous_driving.h battery_management.h can_bus_system.h charging_station.cpp energy_management.h ev_controller.cpp human_machine_interface.h machine_learning_engine.h motor_control_system.h thermal_management.h vehicle_connectivity.h vehicle_cybersecurity.h vehicle_diagnostics.h
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
+# Simulation demo (optional modules)
+$(TARGET_DIR)/simulation_demo: simulation_demo.cpp iso15118_ccs.h v2g_grid_integration.h route_mapping.h localization_sensors.h fleet_telematics.h predictive_maintenance.h functional_safety.h ota_secure_update.h cabin_assistant.h security_monitoring.h dc_fast_charging_control.h simulation_toolkit.h
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
 clean:
 	rm -rf $(TARGET_DIR)
 	rm -f diagnostic_report.txt
@@ -31,6 +35,9 @@ run-charging: $(TARGET_DIR)/charging_station
 
 run-demo: $(TARGET_DIR)/ev_system_demo
 	./$(TARGET_DIR)/ev_system_demo
+
+run-simulation: $(TARGET_DIR)/simulation_demo
+	./$(TARGET_DIR)/simulation_demo
 
 test: $(TARGET_DIR)/ev_system_demo
 	@echo "Running comprehensive EV system test suite..."
