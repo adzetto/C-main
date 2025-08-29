@@ -22,6 +22,17 @@
 #include "human_machine_interface.h"
 #include "machine_learning_engine.h"
 #include "motor_control_system.h"
+#include "iso15118_ccs.h"
+#include "v2g_grid_integration.h"
+#include "route_mapping.h"
+#include "localization_sensors.h"
+#include "fleet_telematics.h"
+#include "predictive_maintenance.h"
+#include "functional_safety.h"
+#include "ota_secure_update.h"
+#include "cabin_assistant.h"
+#include "security_monitoring.h"
+#include "dc_fast_charging_control.h"
 #include "thermal_management.h"
 #include "vehicle_connectivity.h"
 #include "vehicle_cybersecurity.h"
@@ -49,6 +60,18 @@ int main() {
     std::unique_ptr<VehicleConnectivitySystem> vehicle_connectivity = std::make_unique<VehicleConnectivitySystem>("VIN123456789");
     std::unique_ptr<VehicleCybersecurity> vehicle_cybersecurity = std::make_unique<VehicleCybersecurity>();
     std::unique_ptr<VehicleDiagnosticsSystem> vehicle_diagnostics_system = std::make_unique<VehicleDiagnosticsSystem>();
+
+    // Optional feature demos (compile-time flags)
+#ifdef ENABLE_ISO15118
+    {
+        iso15118::ISO15118Stack iso; iso.connect(); iso.start({},{}); iso.authenticate(); auto m=iso.deliver(20.0); (void)m;
+    }
+#endif
+#ifdef ENABLE_V2G
+    {
+        v2g::V2GController v2gctl("VIN123", {11,7.4,20,90}); auto cmd=v2gctl.step({49.8, 60.0, 200}, 65.0); (void)cmd;
+    }
+#endif
 
     // Create threads for each system
     std::vector<std::thread> threads;
