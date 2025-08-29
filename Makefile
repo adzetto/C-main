@@ -16,7 +16,7 @@ $(TARGET_DIR)/ev_controller: ev_controller.cpp
 $(TARGET_DIR)/charging_station: charging_station.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
-$(TARGET_DIR)/ev_system_demo: ev_system_demo.cpp advanced_bms.h adas_system.h can_bus_system.h motor_control_system.h thermal_management.h vehicle_diagnostics.h
+$(TARGET_DIR)/ev_system_demo: ev_system_demo.cpp adas_system.h advanced_bms.h advanced_powertrain_control.h advanced_vehicle_dynamics.h autonomous_driving.h battery_management.h can_bus_system.h charging_station.cpp energy_management.h ev_controller.cpp human_machine_interface.h machine_learning_engine.h motor_control_system.h thermal_management.h vehicle_connectivity.h vehicle_cybersecurity.h vehicle_diagnostics.h
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
 clean:
