@@ -2,7 +2,7 @@
  * @file simulation_demo.cpp
  * @author adzetto
  * @brief Demo application for the Simulation Toolkit and other utilities
- * @version 1.3
+ * @version 1.4
  * @date 2025-08-31
  *
  * @copyright Copyright (c) 2025
@@ -12,12 +12,14 @@
 #include "fleet_telematics.h"
 #include "predictive_maintenance.h"
 #include "functional_safety.h"
+#include "v2g_grid_integration.h"
 #include <iostream>
 
 using namespace simulation;
 using namespace fleet_telematics;
 using namespace predictive_maintenance;
 using namespace functional_safety;
+using namespace v2g_grid_integration;
 
 void runEVPerformanceSimulation() {
     std::cout << "\n--- Running EV Performance Simulation ---" << std::endl;
@@ -143,11 +145,40 @@ void runFunctionalSafetyDemo() {
     brakeManager.execute([&](){ apply_brakes(50); }, ASIL::D);
 }
 
+void runV2GDemo() {
+    std::cout << "\n--- Running V2G Grid Integration Demo ---" << std::endl;
+
+    GridSimulator grid;
+    V2GManager v2g_manager(75.0, 50.0, 10.0); // 75kWh battery, 50kW charge, 10kW discharge
+
+    double current_soc = 60.0;
+    double user_soc_pref = 50.0;
+
+    for (int i = 0; i < 5; ++i) {
+        GridStatus status = grid.getCurrentStatus();
+        V2GMode mode = v2g_manager.decide(status, current_soc, user_soc_pref);
+
+        switch(mode) {
+            case V2GMode::CHARGING:
+                current_soc += 2.0; // Simulate charging
+                break;
+            case V2GMode::DISCHARGING:
+                current_soc -= 1.0; // Simulate discharging
+                break;
+            case V2GMode::IDLE:
+                // No change
+                break;
+        }
+        current_soc = std::max(0.0, std::min(100.0, current_soc));
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+}
+
 int main(int argc, char *argv[]) {
     try {
         std::cout << "=== Simulation & Utilities Demo ===\n";
         std::cout << "Author: adzetto\n";
-        std::cout << "Version: 1.3\n";
+        std::cout << "Version: 1.4\n";
         std::cout << "Date: 2025-08-31\n";
 
         if (argc > 1) {
@@ -158,6 +189,8 @@ int main(int argc, char *argv[]) {
                 runPredictiveMaintenanceDemo();
             } else if (arg == "safety") {
                 runFunctionalSafetyDemo();
+            } else if (arg == "v2g") {
+                runV2GDemo();
             } else {
                 runEVPerformanceSimulation();
             }

@@ -1,82 +1,127 @@
 /**
- * Vehicle-to-Grid (V2G) and Grid Services Integration
- * Author: adzetto
+ * @file v2g_grid_integration.h
+ * @author adzetto
+ * @brief Vehicle-to-Grid (V2G) Integration System
+ * @version 1.0
+ * @date 2025-08-31
+ *
+ * @copyright Copyright (c) 2025
+ *
+ * @details This module provides a framework for Vehicle-to-Grid (V2G) integration,
+ *          enabling EVs to communicate with the power grid to both draw power (G2V)
+ *          and supply power back to the grid (V2G). It simulates grid conditions and
+ *          the decision-making process for bidirectional energy transfer.
  */
+
 #ifndef V2G_GRID_INTEGRATION_H
 #define V2G_GRID_INTEGRATION_H
 
 #include <iostream>
-#include <vector>
 #include <string>
-#include <functional>
+#include <vector>
 #include <chrono>
-#include <map>
+#include <random>
 
-namespace v2g
-{
-    enum class Service { NONE, FFR, FCR, DR, TOU_OPT, BACKUP_POWER };
-    enum class Direction { CHARGE, DISCHARGE, HOLD };
+namespace v2g_grid_integration {
 
-    struct GridSignal { double frequency{50.0}; double price_cents{10.0}; double carbon_intensity{200.0}; };
-    struct Capability { double max_charge_kw{11}; double max_discharge_kw{7.4}; double soc_min{20}; double soc_max{90}; };
+/**
+ * @brief Represents the state of the power grid.
+ */
+struct GridStatus {
+    double frequency_hz;
+    double voltage_v;
+    double price_per_kwh;
+    bool demand_response_event_active;
+};
 
-    struct DispatchCommand {
-        Service service{Service::NONE};
-        Direction direction{Direction::HOLD};
-        double target_power_kw{0.0};
-        std::string rationale;
-    };
+/**
+ * @brief Defines the V2G operation mode.
+ */
+enum class V2GMode {
+    IDLE,          // Not connected or not performing any V2G operation
+    CHARGING,      // Grid to Vehicle (G2V)
+    DISCHARGING    // Vehicle to Grid (V2G)
+};
 
-    class Optimizer
-    {
-    public:
-        DispatchCommand decide(const GridSignal& sig, const Capability& cap, double soc)
-        {
-            DispatchCommand cmd{};
-            // Simple policy: frequency support near 49.9/50.1
-            if (sig.frequency < 49.9 && soc > cap.soc_min + 5) {
-                cmd.service = Service::FCR; cmd.direction = Direction::DISCHARGE; cmd.target_power_kw = std::min(cap.max_discharge_kw, 3.5);
-                cmd.rationale = "Under-frequency support";
-            } else if (sig.frequency > 50.1 && soc < cap.soc_max - 5) {
-                cmd.service = Service::FCR; cmd.direction = Direction::CHARGE; cmd.target_power_kw = std::min(cap.max_charge_kw, 3.5);
-                cmd.rationale = "Over-frequency absorption";
-            } else if (sig.price_cents > 40 && soc > cap.soc_min + 10) {
-                cmd.service = Service::DR; cmd.direction = Direction::DISCHARGE; cmd.target_power_kw = std::min(cap.max_discharge_kw, 2.0);
-                cmd.rationale = "Peak price discharge";
-            } else if (sig.price_cents < 10 && soc < cap.soc_max - 10) {
-                cmd.service = Service::TOU_OPT; cmd.direction = Direction::CHARGE; cmd.target_power_kw = std::min(cap.max_charge_kw, 7.0);
-                cmd.rationale = "Low price charge";
-            } else {
-                cmd.direction = Direction::HOLD; cmd.rationale = "No profitable action";
-            }
-            return cmd;
+/**
+ * @brief Simulates the state of the power grid.
+ */
+class GridSimulator {
+public:
+    GridStatus getCurrentStatus() {
+        // Simulate fluctuating grid conditions
+        std::uniform_real_distribution<double> freq_dist(49.95, 50.05);
+        std::uniform_real_distribution<double> volt_dist(225.0, 235.0);
+        std::uniform_real_distribution<double> price_dist(0.10, 0.50); // Price per kWh
+        
+        GridStatus status;
+        status.frequency_hz = freq_dist(gen);
+        status.voltage_v = volt_dist(gen);
+        status.price_per_kwh = price_dist(gen);
+        status.demand_response_event_active = (price_dist(gen) > 0.45);
+
+        return status;
+    }
+
+private:
+    std::default_random_engine gen{static_cast<long unsigned int>(std::chrono::high_resolution_clock::now().time_since_epoch().count())};
+};
+
+/**
+ * @brief Manages the V2G logic for a single EV.
+ */
+class V2GManager {
+public:
+    V2GManager(double battery_capacity_kwh, double max_charge_rate_kw, double max_discharge_rate_kw)
+        : battery_capacity(battery_capacity_kwh),
+          max_charge_rate(max_charge_rate_kw),
+          max_discharge_rate(max_discharge_rate_kw),
+          current_mode(V2GMode::IDLE) {}
+
+    /**
+     * @brief Decides the V2G operation based on grid status and EV state.
+     *
+     * @param grid_status The current status of the power grid.
+     * @param current_soc The current state of charge of the EV battery (in percent).
+     * @param user_preference_soc The minimum SoC the user wants to maintain.
+     * @return The decided V2GMode.
+     */
+    V2GMode decide(const GridStatus& grid_status, double current_soc, double user_preference_soc) {
+        std::cout << "\n[V2GManager] Analyzing grid and EV state...\n";
+        std::cout << "  Grid Price: " << grid_status.price_per_kwh << " $/kWh\n";
+        std::cout << "  Current SoC: " << current_soc << "%\n";
+        std::cout << "  User SoC Preference: " << user_preference_soc << "%\n";
+
+        if (grid_status.demand_response_event_active && current_soc > user_preference_soc + 10) {
+            std::cout << "  Decision: High grid demand. Discharging to support grid.\n";
+            current_mode = V2GMode::DISCHARGING;
+        } else if (grid_status.price_per_kwh < 0.15 && current_soc < 95) {
+            std::cout << "  Decision: Low grid price. Charging vehicle.\n";
+            current_mode = V2GMode::CHARGING;
+        } else if (current_soc < user_preference_soc) {
+            std::cout << "  Decision: SoC below user preference. Charging vehicle.\n";
+            current_mode = V2GMode::CHARGING;
+        } else {
+            std::cout << "  Decision: No action needed. Idle.\n";
+            current_mode = V2GMode::IDLE;
         }
-    };
+        return current_mode;
+    }
 
-    class AggregatorClient
-    {
-    public:
-        void register_vehicle(const std::string& vin, const Capability& cap) { caps_[vin] = cap; }
-        void send_availability(const std::string& vin, double soc) { (void)vin; (void)soc; }
-        GridSignal get_signal() const { return signal_; }
-        void set_signal(const GridSignal& s) { signal_ = s; }
-    private:
-        std::map<std::string, Capability> caps_{};
-        GridSignal signal_{};
-    };
+    /**
+     * @brief Gets the current V2G operation mode.
+     */
+    V2GMode getCurrentMode() const {
+        return current_mode;
+    }
 
-    class V2GController
-    {
-    public:
-        V2GController(std::string vin, Capability cap) : vin_(std::move(vin)), cap_(cap) {}
-        DispatchCommand step(const GridSignal& sig, double soc) { return opt_.decide(sig, cap_, soc); }
-        const Capability& capability() const { return cap_; }
-    private:
-        std::string vin_;
-        Capability cap_{};
-        Optimizer opt_{};
-    };
-}
+private:
+    double battery_capacity;
+    double max_charge_rate;
+    double max_discharge_rate;
+    V2GMode current_mode;
+};
+
+} // namespace v2g_grid_integration
 
 #endif // V2G_GRID_INTEGRATION_H
-
