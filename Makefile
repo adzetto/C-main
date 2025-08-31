@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -O2 -pthread
 TARGET_DIR = bin
-TARGETS = ev_controller charging_station ev_system_demo advanced_utilities_demo realtime_monitor_demo
+TARGETS = ev_controller charging_station ev_system_demo advanced_utilities_demo realtime_monitor_demo simulation_demo
 
 .PHONY: all clean test
 
@@ -27,9 +27,9 @@ $(TARGET_DIR)/advanced_utilities_demo: advanced_utilities_demo.cpp advanced_util
 $(TARGET_DIR)/realtime_monitor_demo: realtime_monitor_demo.cpp realtime_system_monitor.h
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
-# Simulation demo (optional modules)
-$(TARGET_DIR)/simulation_demo: simulation_demo.cpp iso15118_ccs.h v2g_grid_integration.h route_mapping.h localization_sensors.h fleet_telematics.h predictive_maintenance.h functional_safety.h ota_secure_update.h cabin_assistant.h security_monitoring.h dc_fast_charging_control.h simulation_toolkit.h
-	$(CXX) $(CXXFLAGS) -o $@ $<
+# Simulation toolkit demo
+$(TARGET_DIR)/simulation_demo: simulation_demo.cpp simulation_toolkit.h
+	$(CXX) $(CXXFLAGS) -o $@ simulation_demo.cpp
 
 clean:
 	rm -rf $(TARGET_DIR)
@@ -76,6 +76,10 @@ test-monitor: $(TARGET_DIR)/realtime_monitor_demo
 	@echo "Running real-time system monitor test..."
 	./$(TARGET_DIR)/realtime_monitor_demo
 
+test-simulation: $(TARGET_DIR)/simulation_demo
+	@echo "Running simulation toolkit test..."
+	./$(TARGET_DIR)/simulation_demo
+
 help:
 	@echo "Available targets:"
 	@echo "  all          - Build all programs"
@@ -89,6 +93,7 @@ help:
 	@echo "  test         - Run automated test suite"
 	@echo "  test-utilities - Run advanced utilities test suite"
 	@echo "  test-monitor   - Run real-time system monitor test"
+	@echo "  test-simulation - Run simulation toolkit test"
 	@echo "  demo         - Run real-time simulation"
 	@echo "  full-test    - Run both test suite and simulation"
 	@echo "  install      - Install binaries to system"
