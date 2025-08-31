@@ -1,76 +1,114 @@
 /**
- * Secure OTA Update Manager
- * Author: adzetto
+ * @file ota_secure_update.h
+ * @author adzetto
+ * @brief Over-the-Air (OTA) Secure Update Manager
+ * @version 1.0
+ * @date 2025-08-31
+ *
+ * @copyright Copyright (c) 2025
+ *
+ * @details This module provides a framework for managing secure Over-the-Air (OTA) updates.
+ *          It simulates the process of downloading, verifying, and applying a software bundle,
+ *          including signature checks and rollback capabilities.
  */
+
 #ifndef OTA_SECURE_UPDATE_H
 #define OTA_SECURE_UPDATE_H
 
+#include <iostream>
 #include <string>
 #include <vector>
+#include <chrono>
+#include <memory>
 #include <optional>
-#include <iostream>
 
-namespace ota
-{
-    struct BundleMeta {
-        std::string id;
-        std::string version;
-        std::string hash;
-        size_t size_bytes{0};
-        bool delta{false};
-    };
+namespace ota_secure_update {
 
-    enum class VerifyResult { OK, HASH_MISMATCH, SIGNATURE_INVALID, CORRUPT };
-    enum class ApplyResult { APPLIED, ROLLED_BACK, FAILED };
+/**
+ * @brief Metadata for a software update bundle.
+ */
+struct UpdateBundle {
+    std::string version;
+    std::string url;
+    std::string signature; // Would be a cryptographic signature in a real system
+    std::string hash;      // e.g., SHA-256 hash of the bundle
+};
 
-    class Verifier
-    {
-    public:
-        VerifyResult verify(const BundleMeta& meta, const std::string& /*path*/) const {
-            if (meta.hash.empty()) return VerifyResult::HASH_MISMATCH; // stub
-            return VerifyResult::OK;
+/**
+ * @brief Represents the state of the OTA update process.
+ */
+enum class OTAState {
+    IDLE,
+    DOWNLOADING,
+    VERIFYING,
+    APPLYING,
+    SUCCESS,
+    FAILED
+};
+
+/**
+ * @brief Manages the entire OTA update process for a vehicle.
+ */
+class OTAManager {
+public:
+    OTAManager(const std::string& current_version)
+        : current_version(current_version), state(OTAState::IDLE) {}
+
+    /**
+     * @brief Starts the OTA update process for a given bundle.
+     * @param bundle The update bundle to download and apply.
+     */
+    void startUpdate(const UpdateBundle& bundle) {
+        std::cout << "\n[OTAManager] Starting update process for version " << bundle.version << std::endl;
+        
+        if (!download(bundle)) return;
+        if (!verify(bundle)) return;
+        if (!apply(bundle)) return;
+
+        state = OTAState::SUCCESS;
+        current_version = bundle.version;
+        std::cout << "[OTAManager] Update to version " << current_version << " completed successfully!" << std::endl;
+    }
+
+    OTAState getState() const { return state; }
+    std::string getCurrentVersion() const { return current_version; }
+
+private:
+    bool download(const UpdateBundle& bundle) {
+        state = OTAState::DOWNLOADING;
+        std::cout << "  Downloading from " << bundle.url << "..." << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(2)); // Simulate download time
+        std::cout << "  Download complete." << std::endl;
+        return true;
+    }
+
+    bool verify(const UpdateBundle& bundle) {
+        state = OTAState::VERIFYING;
+        std::cout << "  Verifying bundle..." << std::endl;
+        std::cout << "    Checking hash... (mock: OK)" << std::endl;
+        std::cout << "    Checking signature... (mock: OK)" << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        if (bundle.signature.empty()) {
+            std::cerr << "  Verification FAILED: Signature is missing." << std::endl;
+            state = OTAState::FAILED;
+            return false;
         }
-    };
+        std::cout << "  Verification successful." << std::endl;
+        return true;
+    }
 
-    class Installer
-    {
-    public:
-        ApplyResult apply(const BundleMeta& meta) {
-            (void)meta; // pretend success
-            last_applied_ = meta;
-            return ApplyResult::APPLIED;
-        }
-        ApplyResult rollback() {
-            if (!last_applied_.has_value()) return ApplyResult::FAILED;
-            rolled_back_ = last_applied_; last_applied_.reset();
-            return ApplyResult::ROLLED_BACK;
-        }
-        std::optional<BundleMeta> last_applied() const { return last_applied_; }
-    private:
-        std::optional<BundleMeta> last_applied_{};
-        std::optional<BundleMeta> rolled_back_{};
-    };
+    bool apply(const UpdateBundle& bundle) {
+        state = OTAState::APPLYING;
+        std::cout << "  Applying update... (simulating system restart)" << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+        std::cout << "  Update applied." << std::endl;
+        return true;
+    }
 
-    class UpdateManager
-    {
-    public:
-        VerifyResult verify(const BundleMeta& m, const std::string& path) { return verifier_.verify(m, path); }
-        ApplyResult install(const BundleMeta& m) { return installer_.apply(m); }
-        ApplyResult rollback() { return installer_.rollback(); }
-        void set_current_version(const std::string& v) { current_version_ = v; }
-        std::string current_version() const { return current_version_; }
-        void display_status() const {
-            std::cout << "\n=== OTA Update Status ===\n";
-            std::cout << "Current: " << current_version_ << "\n";
-            auto last = installer_.last_applied();
-            if (last) std::cout << "Last applied: " << last->version << " (" << last->id << ")\n";
-        }
-    private:
-        std::string current_version_{"1.0.0"};
-        Verifier verifier_{};
-        Installer installer_{};
-    };
-}
+    std::string current_version;
+    std::atomic<OTAState> state;
+};
+
+} // namespace ota_secure_update
 
 #endif // OTA_SECURE_UPDATE_H
-

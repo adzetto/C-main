@@ -28,7 +28,7 @@ $(TARGET_DIR)/realtime_monitor_demo: realtime_monitor_demo.cpp realtime_system_m
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
 # Simulation toolkit demo
-$(TARGET_DIR)/simulation_demo: simulation_demo.cpp simulation_toolkit.h fleet_telematics.h predictive_maintenance.h functional_safety.h v2g_grid_integration.h
+$(TARGET_DIR)/simulation_demo: simulation_demo.cpp simulation_toolkit.h fleet_telematics.h predictive_maintenance.h functional_safety.h v2g_grid_integration.h ota_secure_update.h
 	$(CXX) $(CXXFLAGS) -o $@ simulation_demo.cpp
 
 clean:
@@ -64,6 +64,9 @@ run-safety: $(TARGET_DIR)/simulation_demo
 
 run-v2g: $(TARGET_DIR)/simulation_demo
 	./$(TARGET_DIR)/simulation_demo v2g
+
+run-ota: $(TARGET_DIR)/simulation_demo
+	./$(TARGET_DIR)/simulation_demo ota
 
 test: $(TARGET_DIR)/ev_system_demo
 	@echo "Running comprehensive EV system test suite..."
@@ -108,6 +111,10 @@ test-v2g: $(TARGET_DIR)/simulation_demo
 	@echo "Running V2G integration test..."
 	./$(TARGET_DIR)/simulation_demo v2g
 
+test-ota: $(TARGET_DIR)/simulation_demo
+	@echo "Running OTA secure update test..."
+	./$(TARGET_DIR)/simulation_demo ota
+
 help:
 	@echo "Available targets:"
 	@echo "  all          - Build all programs"
@@ -122,6 +129,7 @@ help:
 	@echo "  run-maintenance - Run predictive maintenance demo"
 	@echo "  run-safety - Run functional safety demo"
 	@echo "  run-v2g - Run V2G integration demo"
+	@echo "  run-ota - Run OTA secure update demo"
 	@echo "  test         - Run automated test suite"
 	@echo "  test-utilities - Run advanced utilities test suite"
 	@echo "  test-monitor   - Run real-time system monitor test"
@@ -130,6 +138,7 @@ help:
 	@echo "  test-maintenance - Run predictive maintenance test"
 	@echo "  test-safety - Run functional safety test"
 	@echo "  test-v2g - Run V2G integration test"
+	@echo "  test-ota - Run OTA secure update test"
 	@echo "  demo         - Run real-time simulation"
 	@echo "  full-test    - Run both test suite and simulation"
 	@echo "  install      - Install binaries to system"

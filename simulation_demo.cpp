@@ -2,7 +2,7 @@
  * @file simulation_demo.cpp
  * @author adzetto
  * @brief Demo application for the Simulation Toolkit and other utilities
- * @version 1.4
+ * @version 1.5
  * @date 2025-08-31
  *
  * @copyright Copyright (c) 2025
@@ -13,6 +13,7 @@
 #include "predictive_maintenance.h"
 #include "functional_safety.h"
 #include "v2g_grid_integration.h"
+#include "ota_secure_update.h"
 #include <iostream>
 
 using namespace simulation;
@@ -20,6 +21,7 @@ using namespace fleet_telematics;
 using namespace predictive_maintenance;
 using namespace functional_safety;
 using namespace v2g_grid_integration;
+using namespace ota_secure_update;
 
 void runEVPerformanceSimulation() {
     std::cout << "\n--- Running EV Performance Simulation ---" << std::endl;
@@ -174,11 +176,28 @@ void runV2GDemo() {
     }
 }
 
+void runOTADemo() {
+    std::cout << "\n--- Running OTA Secure Update Demo ---" << std::endl;
+
+    OTAManager otaManager("1.0.0");
+    std::cout << "Initial software version: " << otaManager.getCurrentVersion() << std::endl;
+
+    UpdateBundle bundle;
+    bundle.version = "1.1.0";
+    bundle.url = "https://updates.example.com/ev-firmware/1.1.0";
+    bundle.hash = "mock_hash_string_for_1.1.0";
+    bundle.signature = "mock_signature_string_for_1.1.0";
+
+    otaManager.startUpdate(bundle);
+
+    std::cout << "Final software version: " << otaManager.getCurrentVersion() << std::endl;
+}
+
 int main(int argc, char *argv[]) {
     try {
         std::cout << "=== Simulation & Utilities Demo ===\n";
         std::cout << "Author: adzetto\n";
-        std::cout << "Version: 1.4\n";
+        std::cout << "Version: 1.5\n";
         std::cout << "Date: 2025-08-31\n";
 
         if (argc > 1) {
@@ -191,6 +210,8 @@ int main(int argc, char *argv[]) {
                 runFunctionalSafetyDemo();
             } else if (arg == "v2g") {
                 runV2GDemo();
+            } else if (arg == "ota") {
+                runOTADemo();
             } else {
                 runEVPerformanceSimulation();
             }
