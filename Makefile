@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -O2 -pthread
 TARGET_DIR = bin
-TARGETS = ev_controller charging_station ev_system_demo advanced_utilities_demo
+TARGETS = ev_controller charging_station ev_system_demo advanced_utilities_demo realtime_monitor_demo
 
 .PHONY: all clean test
 
@@ -22,6 +22,10 @@ $(TARGET_DIR)/ev_system_demo: ev_system_demo.cpp adas_system.h advanced_bms.h ad
 # Advanced utilities demo
 $(TARGET_DIR)/advanced_utilities_demo: advanced_utilities_demo.cpp advanced_utilities_stubs.cpp advanced_data_analytics.h advanced_network_stack.h advanced_cryptographic_security.h advanced_signal_processing.h advanced_memory_management.h advanced_configuration_management.h advanced_logging_framework.h
 	$(CXX) $(CXXFLAGS) -o $@ advanced_utilities_demo.cpp advanced_utilities_stubs.cpp
+
+# Real-time system monitor demo
+$(TARGET_DIR)/realtime_monitor_demo: realtime_monitor_demo.cpp realtime_system_monitor.h
+	$(CXX) $(CXXFLAGS) -o $@ $<
 
 # Simulation demo (optional modules)
 $(TARGET_DIR)/simulation_demo: simulation_demo.cpp iso15118_ccs.h v2g_grid_integration.h route_mapping.h localization_sensors.h fleet_telematics.h predictive_maintenance.h functional_safety.h ota_secure_update.h cabin_assistant.h security_monitoring.h dc_fast_charging_control.h simulation_toolkit.h
@@ -46,6 +50,9 @@ run-simulation: $(TARGET_DIR)/simulation_demo
 run-utilities: $(TARGET_DIR)/advanced_utilities_demo
 	./$(TARGET_DIR)/advanced_utilities_demo
 
+run-monitor: $(TARGET_DIR)/realtime_monitor_demo
+	./$(TARGET_DIR)/realtime_monitor_demo
+
 test: $(TARGET_DIR)/ev_system_demo
 	@echo "Running comprehensive EV system test suite..."
 	@echo "1" | ./$(TARGET_DIR)/ev_system_demo
@@ -65,6 +72,10 @@ test-utilities: $(TARGET_DIR)/advanced_utilities_demo
 	@echo "Running advanced utilities test suite..."
 	./$(TARGET_DIR)/advanced_utilities_demo
 
+test-monitor: $(TARGET_DIR)/realtime_monitor_demo
+	@echo "Running real-time system monitor test..."
+	./$(TARGET_DIR)/realtime_monitor_demo
+
 help:
 	@echo "Available targets:"
 	@echo "  all          - Build all programs"
@@ -74,8 +85,10 @@ help:
 	@echo "  run-demo     - Run comprehensive EV system demo"
 	@echo "  run-simulation - Run simulation demo"
 	@echo "  run-utilities  - Run advanced utilities demo"
+	@echo "  run-monitor    - Run real-time system monitor demo"
 	@echo "  test         - Run automated test suite"
 	@echo "  test-utilities - Run advanced utilities test suite"
+	@echo "  test-monitor   - Run real-time system monitor test"
 	@echo "  demo         - Run real-time simulation"
 	@echo "  full-test    - Run both test suite and simulation"
 	@echo "  install      - Install binaries to system"
