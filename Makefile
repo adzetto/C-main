@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -O2 -pthread
 TARGET_DIR = bin
-TARGETS = ev_controller charging_station ev_system_demo
+TARGETS = ev_controller charging_station ev_system_demo advanced_utilities_demo
 
 .PHONY: all clean test
 
@@ -18,6 +18,10 @@ $(TARGET_DIR)/charging_station: charging_station.cpp
 
 $(TARGET_DIR)/ev_system_demo: ev_system_demo.cpp adas_system.h advanced_bms.h advanced_powertrain_control.h advanced_vehicle_dynamics.h autonomous_driving.h battery_management.h can_bus_system.h charging_station.cpp energy_management.h ev_controller.cpp human_machine_interface.h machine_learning_engine.h motor_control_system.h thermal_management.h vehicle_connectivity.h vehicle_cybersecurity.h vehicle_diagnostics.h
 	$(CXX) $(CXXFLAGS) -o $@ $<
+
+# Advanced utilities demo
+$(TARGET_DIR)/advanced_utilities_demo: advanced_utilities_demo.cpp advanced_utilities_stubs.cpp advanced_data_analytics.h advanced_network_stack.h advanced_cryptographic_security.h advanced_signal_processing.h advanced_memory_management.h advanced_configuration_management.h advanced_logging_framework.h
+	$(CXX) $(CXXFLAGS) -o $@ advanced_utilities_demo.cpp advanced_utilities_stubs.cpp
 
 # Simulation demo (optional modules)
 $(TARGET_DIR)/simulation_demo: simulation_demo.cpp iso15118_ccs.h v2g_grid_integration.h route_mapping.h localization_sensors.h fleet_telematics.h predictive_maintenance.h functional_safety.h ota_secure_update.h cabin_assistant.h security_monitoring.h dc_fast_charging_control.h simulation_toolkit.h
@@ -39,6 +43,9 @@ run-demo: $(TARGET_DIR)/ev_system_demo
 run-simulation: $(TARGET_DIR)/simulation_demo
 	./$(TARGET_DIR)/simulation_demo
 
+run-utilities: $(TARGET_DIR)/advanced_utilities_demo
+	./$(TARGET_DIR)/advanced_utilities_demo
+
 test: $(TARGET_DIR)/ev_system_demo
 	@echo "Running comprehensive EV system test suite..."
 	@echo "1" | ./$(TARGET_DIR)/ev_system_demo
@@ -54,15 +61,22 @@ full-test: $(TARGET_DIR)/ev_system_demo
 install:
 	sudo cp $(TARGET_DIR)/* /usr/local/bin/
 
+test-utilities: $(TARGET_DIR)/advanced_utilities_demo
+	@echo "Running advanced utilities test suite..."
+	./$(TARGET_DIR)/advanced_utilities_demo
+
 help:
 	@echo "Available targets:"
-	@echo "  all         - Build all programs"
-	@echo "  clean       - Remove build artifacts"
-	@echo "  run-ev      - Run basic EV controller"
-	@echo "  run-charging- Run charging station simulator"
-	@echo "  run-demo    - Run comprehensive EV system demo"
-	@echo "  test        - Run automated test suite"
-	@echo "  demo        - Run real-time simulation"
-	@echo "  full-test   - Run both test suite and simulation"
-	@echo "  install     - Install binaries to system"
-	@echo "  help        - Show this help message"
+	@echo "  all          - Build all programs"
+	@echo "  clean        - Remove build artifacts"
+	@echo "  run-ev       - Run basic EV controller"
+	@echo "  run-charging - Run charging station simulator"
+	@echo "  run-demo     - Run comprehensive EV system demo"
+	@echo "  run-simulation - Run simulation demo"
+	@echo "  run-utilities  - Run advanced utilities demo"
+	@echo "  test         - Run automated test suite"
+	@echo "  test-utilities - Run advanced utilities test suite"
+	@echo "  demo         - Run real-time simulation"
+	@echo "  full-test    - Run both test suite and simulation"
+	@echo "  install      - Install binaries to system"
+	@echo "  help         - Show this help message"
