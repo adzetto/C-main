@@ -2,7 +2,7 @@
  * @file simulation_demo.cpp
  * @author adzetto
  * @brief Demo application for the Simulation Toolkit and other utilities
- * @version 1.1
+ * @version 1.2
  * @date 2025-08-31
  *
  * @copyright Copyright (c) 2025
@@ -10,10 +10,12 @@
 
 #include "simulation_toolkit.h"
 #include "fleet_telematics.h"
+#include "predictive_maintenance.h"
 #include <iostream>
 
 using namespace simulation;
 using namespace fleet_telematics;
+using namespace predictive_maintenance;
 
 void runEVPerformanceSimulation() {
     std::cout << "\n--- Running EV Performance Simulation ---" << std::endl;
@@ -51,40 +53,78 @@ void runFleetTelematicsDemo() {
 
     if (vehicle1 && vehicle2) {
         // Simulate some data updates for 20 seconds
-        for (int i = 0; i < 10; ++i) {
+        for (int i = 0; i < 4; ++i) {
             VehicleDataSnapshot data1, data2;
             data1.vehicleId = "EV-001";
             data1.location = {40.7128, -74.0060, 10.0, 50.5};
-            data1.battery_soc = 80.0 - i * 2.0;
-            data1.motor_temp_c = 65.0 + i;
-            data1.system_health_score = 95.0 - i;
+            data1.battery_soc = 80.0 - i * 5.0;
+            data1.motor_temp_c = 65.0 + i * 2.0;
+            data1.system_health_score = 95.0 - i * 2.0;
 
             data2.vehicleId = "EV-002";
             data2.location = {34.0522, -118.2437, 100.0, 80.0};
-            data2.battery_soc = 75.0 - i * 1.5;
-            data2.motor_temp_c = 70.0 + i * 0.5;
-            data2.system_health_score = 98.0 - i * 0.5;
+            data2.battery_soc = 75.0 - i * 3.0;
+            data2.motor_temp_c = 70.0 + i * 1.0;
+            data2.system_health_score = 98.0 - i * 1.0;
 
             vehicle1->updateVehicleData(data1);
             vehicle2->updateVehicleData(data2);
 
             std::cout << "\n[MainDemo] Updated vehicle data. Waiting for telematics cycle...\n";
-            std::this_thread::sleep_for(std::chrono::seconds(2));
+            std::this_thread::sleep_for(std::chrono::seconds(5));
         }
     }
 
     fleetManager.stopAllTelematics();
 }
 
+void runPredictiveMaintenanceDemo() {
+    std::cout << "\n--- Running Predictive Maintenance Demo ---" << std::endl;
+
+    MaintenanceManager maintenanceManager;
+    maintenanceManager.trainAllModels();
+
+    std::cout << "\n--- Analyzing Component Health ---" << std::endl;
+
+    // Simulate analyzing a few components with different health states
+    ComponentDataPoint battery_data_healthy = {1200, 55.0, 50.0, 5};
+    ComponentDataPoint battery_data_warning = {4800, 75.0, 65.0, 25};
+    ComponentDataPoint motor_data_critical = {8000, 95.0, 80.0, 100};
+
+    auto prediction1 = maintenanceManager.analyzeComponent("BatterySystem", battery_data_healthy);
+    auto prediction2 = maintenanceManager.analyzeComponent("BatterySystem", battery_data_warning);
+    auto prediction3 = maintenanceManager.analyzeComponent("MotorAssembly", motor_data_critical);
+
+    auto print_prediction = [](const RULPrediction& p) {
+        if (!p.component_id.empty()) {
+            std::cout << "\nPrediction for: " << p.component_id << std::endl;
+            std::cout << "  Remaining Useful Life: " << p.remaining_useful_life_hours << " hours" << std::endl;
+            std::cout << "  Confidence: " << p.confidence_percent << "%" << std::endl;
+            std::cout << "  Recommendation: " << p.recommendation << std::endl;
+        }
+    };
+
+    print_prediction(prediction1);
+    print_prediction(prediction2);
+    print_prediction(prediction3);
+}
+
 int main(int argc, char *argv[]) {
     try {
         std::cout << "=== Simulation & Utilities Demo ===\n";
         std::cout << "Author: adzetto\n";
-        std::cout << "Version: 1.1\n";
+        std::cout << "Version: 1.2\n";
         std::cout << "Date: 2025-08-31\n";
 
-        if (argc > 1 && std::string(argv[1]) == "telematics") {
-            runFleetTelematicsDemo();
+        if (argc > 1) {
+            std::string arg = argv[1];
+            if (arg == "telematics") {
+                runFleetTelematicsDemo();
+            } else if (arg == "maintenance") {
+                runPredictiveMaintenanceDemo();
+            } else {
+                runEVPerformanceSimulation();
+            }
         } else {
             runEVPerformanceSimulation();
         }
