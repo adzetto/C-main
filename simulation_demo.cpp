@@ -2,7 +2,7 @@
  * @file simulation_demo.cpp
  * @author adzetto
  * @brief Demo application for the Simulation Toolkit and other utilities
- * @version 1.2
+ * @version 1.3
  * @date 2025-08-31
  *
  * @copyright Copyright (c) 2025
@@ -11,11 +11,13 @@
 #include "simulation_toolkit.h"
 #include "fleet_telematics.h"
 #include "predictive_maintenance.h"
+#include "functional_safety.h"
 #include <iostream>
 
 using namespace simulation;
 using namespace fleet_telematics;
 using namespace predictive_maintenance;
+using namespace functional_safety;
 
 void runEVPerformanceSimulation() {
     std::cout << "\n--- Running EV Performance Simulation ---" << std::endl;
@@ -109,11 +111,43 @@ void runPredictiveMaintenanceDemo() {
     print_prediction(prediction3);
 }
 
+void runFunctionalSafetyDemo() {
+    std::cout << "\n--- Running Functional Safety Demo ---" << std::endl;
+
+    SafetyManager brakeManager("BrakingSystem", ASIL::D);
+    SafetyCriticalValue<int> brake_pressure(0);
+
+    auto apply_brakes = [&](int pressure) {
+        std::cout << "Attempting to apply brakes with pressure: " << pressure << std::endl;
+        if (pressure > 1000) {
+            throw std::runtime_error("Pressure sensor failure!");
+        }
+        brake_pressure.set(pressure);
+        std::cout << "Brakes applied successfully.\n";
+    };
+
+    // 1. Successful execution
+    brakeManager.execute([&](){ apply_brakes(100); }, ASIL::D);
+    int p_val;
+    if (brake_pressure.get(p_val)) {
+        std::cout << "Brake pressure verified: " << p_val << std::endl;
+    }
+
+    // 2. Execution that causes an error
+    std::cout << "\n--- Simulating a fault ---" << std::endl;
+    brakeManager.execute([&](){ apply_brakes(2000); }, ASIL::D);
+    std::cout << "Current safety state: " << static_cast<int>(brakeManager.getSafetyState()) << std::endl;
+
+    // 3. Attempt to execute in a non-nominal state
+    std::cout << "\n--- Attempting to operate in safe state ---" << std::endl;
+    brakeManager.execute([&](){ apply_brakes(50); }, ASIL::D);
+}
+
 int main(int argc, char *argv[]) {
     try {
         std::cout << "=== Simulation & Utilities Demo ===\n";
         std::cout << "Author: adzetto\n";
-        std::cout << "Version: 1.2\n";
+        std::cout << "Version: 1.3\n";
         std::cout << "Date: 2025-08-31\n";
 
         if (argc > 1) {
@@ -122,6 +156,8 @@ int main(int argc, char *argv[]) {
                 runFleetTelematicsDemo();
             } else if (arg == "maintenance") {
                 runPredictiveMaintenanceDemo();
+            } else if (arg == "safety") {
+                runFunctionalSafetyDemo();
             } else {
                 runEVPerformanceSimulation();
             }

@@ -28,7 +28,7 @@ $(TARGET_DIR)/realtime_monitor_demo: realtime_monitor_demo.cpp realtime_system_m
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
 # Simulation toolkit demo
-$(TARGET_DIR)/simulation_demo: simulation_demo.cpp simulation_toolkit.h fleet_telematics.h predictive_maintenance.h
+$(TARGET_DIR)/simulation_demo: simulation_demo.cpp simulation_toolkit.h fleet_telematics.h predictive_maintenance.h functional_safety.h
 	$(CXX) $(CXXFLAGS) -o $@ simulation_demo.cpp
 
 clean:
@@ -58,6 +58,9 @@ run-telematics: $(TARGET_DIR)/simulation_demo
 
 run-maintenance: $(TARGET_DIR)/simulation_demo
 	./$(TARGET_DIR)/simulation_demo maintenance
+
+run-safety: $(TARGET_DIR)/simulation_demo
+	./$(TARGET_DIR)/simulation_demo safety
 
 test: $(TARGET_DIR)/ev_system_demo
 	@echo "Running comprehensive EV system test suite..."
@@ -94,6 +97,10 @@ test-maintenance: $(TARGET_DIR)/simulation_demo
 	@echo "Running predictive maintenance test..."
 	./$(TARGET_DIR)/simulation_demo maintenance
 
+test-safety: $(TARGET_DIR)/simulation_demo
+	@echo "Running functional safety test..."
+	./$(TARGET_DIR)/simulation_demo safety
+
 help:
 	@echo "Available targets:"
 	@echo "  all          - Build all programs"
@@ -106,12 +113,14 @@ help:
 	@echo "  run-monitor    - Run real-time system monitor demo"
 	@echo "  run-telematics - Run fleet telematics demo"
 	@echo "  run-maintenance - Run predictive maintenance demo"
+	@echo "  run-safety - Run functional safety demo"
 	@echo "  test         - Run automated test suite"
 	@echo "  test-utilities - Run advanced utilities test suite"
 	@echo "  test-monitor   - Run real-time system monitor test"
 	@echo "  test-simulation - Run simulation toolkit test"
 	@echo "  test-telematics - Run fleet telematics test"
 	@echo "  test-maintenance - Run predictive maintenance test"
+	@echo "  test-safety - Run functional safety test"
 	@echo "  demo         - Run real-time simulation"
 	@echo "  full-test    - Run both test suite and simulation"
 	@echo "  install      - Install binaries to system"
