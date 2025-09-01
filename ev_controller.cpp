@@ -5,6 +5,7 @@
 #include <thread>
 #include "ev_communication_protocols.h"
 #include "iso15118_ccs.h"
+#include "realtime_system_monitor.h"
 
 class ElectricVehicle {
 private:
@@ -142,6 +143,18 @@ public:
         std::cout << "--- End Charging Session ---\n";
     }
 
+    void simulateMonitoring() {
+        std::cout << "\n--- Simulating Real-Time Monitoring ---\n";
+        system_monitor::RealTimeSystemMonitor monitor;
+        monitor.initialize();
+        monitor.start();
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+        std::cout << monitor.getSystemStatus();
+        monitor.stop();
+        monitor.shutdown();
+        std::cout << "--- End Monitoring ---\n";
+    }
+
     void simulateCommunications() {
         std::cout << "\n--- Simulating Communications ---\n";
         comms_controller.sendEmergencyAlert("ACCIDENT_AHEAD", "Multi-vehicle collision on I-5 North");
@@ -191,6 +204,8 @@ int main() {
         tesla.startCharging();
         tesla.displayStatus();
     }
+
+    tesla.simulateMonitoring();
     
     return 0;
 }
