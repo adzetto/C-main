@@ -13,6 +13,8 @@
 #include "functional_safety.h"
 #include "advanced_ai_systems.h"
 #include "advanced_powertrain_control.h"
+#include "can_bus_system.h"
+#include "advanced_powertrain_control.h"
 
 class ElectricVehicle {
 private:
@@ -268,6 +270,32 @@ public:
         std::cout << "--- End Advanced Powertrain Control ---\n";
     }
 
+        void simulateCANBus() {
+                std::cout << "\n--- Simulating CAN Bus ---\n";
+                CANBusSystem can;
+                CANMessageManager mgr;
+                CANNetworkManager net;
+
+                // Encode a few signals
+                CANMessage speedMsg = mgr.encode("VehicleSpeed", currentSpeed);
+                CANMessage socMsg = mgr.encode("BatterySOC", batteryLevel);
+
+                // Send over network (stubbed)
+                net.send(speedMsg);
+                net.send(socMsg);
+
+                // Receive and decode (stubbed)
+                auto rx = net.receive();
+                (void)rx; // avoid unused warning in stub
+
+                double decodedSpeed = mgr.decode(speedMsg, "VehicleSpeed");
+                double decodedSOC = mgr.decode(socMsg, "BatterySOC");
+
+                std::cout << "Decoded VehicleSpeed: " << decodedSpeed << " km/h\n";
+                std::cout << "Decoded BatterySOC: " << decodedSOC << " %\n";
+                std::cout << "--- End CAN Bus ---\n";
+        }
+
     void simulateMonitoring() {
         std::cout << "\n--- Simulating Real-Time Monitoring ---\n";
         system_monitor::RealTimeSystemMonitor monitor;
@@ -338,6 +366,8 @@ int main() {
     tesla.simulateAdvancedAI();
 
     tesla.simulateAdvancedPowertrain();
+
+        tesla.simulateCANBus();
     
     if (tesla.getBatteryLevel() < 50.0) {
         tesla.startCharging();
