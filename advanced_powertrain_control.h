@@ -238,7 +238,8 @@ public:
         predictiveControl(true),
         thermalProtection(true),
         emergencyShutdownArmed(true),
-        diagnosticsActive(true) {
+        diagnosticsActive(true),
+        controlLoopRunning(false) {
         
         initializeMotorControllers();
         initializeInverters();
@@ -248,9 +249,14 @@ public:
         initializeRegenBraking();
         initializeThermalManagement();
         initializePowerElectronics();
-        startControlLoop();
+    startControlLoop();
         
         std::cout << "Advanced Powertrain Control System initialized" << std::endl;
+    }
+
+    ~AdvancedPowertrainControl() {
+        // Ensure background control loop stops before destruction
+        stopControlLoop();
     }
 
     void initializeMotorControllers() {
@@ -689,6 +695,8 @@ private:
     ThermalManagement thermalMgmt;
     PowerElectronicsController powerElectronics;
     VehicleDynamicsInterface vehicleDynamics;
+    std::atomic<bool> controlLoopRunning;
+    std::thread controlThread;
 
     void configureDriveMode(float powerLimit, float aggressiveness, 
                            float efficiency, bool smoothness, bool ecoMode) {
@@ -1155,18 +1163,27 @@ private:
     }
 
     void startControlLoop() {
-        std::thread([this]() {
-            while (systemEnabled || powertrainState != PowertrainState::OFF) {
-                // Update all controllers at 100Hz
+        controlLoopRunning.store(true);
+        controlThread = std::thread([this]() {
+            while (controlLoopRunning.load()) {
+                // Update all controllers at 100Hz when enabled
                 if (systemEnabled) {
                     updateMotorControllers();
                     updateRegenerativeBraking();
                     updateThermalManagement();
                 }
-                
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
-        }).detach();
+        });
+    }
+
+    void stopControlLoop() {
+        controlLoopRunning.store(false);
+        systemEnabled = false;
+        powertrainState = PowertrainState::OFF;
+        if (controlThread.joinable()) {
+            controlThread.join();
+        }
     }
 };
 

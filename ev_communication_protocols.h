@@ -233,7 +233,8 @@ protected:
 class V2VCommunication : public NetworkInterface {
 public:
     V2VCommunication() : NetworkInterface(InterfaceType::DSRC, "V2V-DSRC"),
-                         broadcast_interval(std::chrono::milliseconds(100)) {
+                         broadcast_interval(std::chrono::milliseconds(100)),
+                         enable_periodic_broadcast_(false) {
         initializeV2V();
     }
     
@@ -246,7 +247,9 @@ public:
         
         if (initializeDSRC()) {
             state = CommState::CONNECTED;
-            startPeriodicBroadcast();
+            if (enable_periodic_broadcast_) {
+                startPeriodicBroadcast();
+            }
             std::cout << "[V2V] DSRC interface initialized successfully\n";
             return true;
         }
@@ -283,6 +286,11 @@ public:
         if (simulateTransmission(v2v_message)) {
             bytes_sent += v2v_message.getSize();
             message_queue.push(v2v_message);
+            // Prevent unbounded growth
+            const size_t kMaxQueue = 512;
+            while (message_queue.size() > kMaxQueue) {
+                message_queue.pop();
+            }
             
             std::cout << "[V2V] Sent message: " << message.message_id << "\n";
             return true;
@@ -414,6 +422,7 @@ private:
     std::map<std::string, NearbyVehicle> nearby_vehicles;
     std::thread broadcast_thread;
     std::atomic<bool> broadcasting;
+    bool enable_periodic_broadcast_;
     
     void initializeV2V() {
         vehicle_id = "EV_" + std::to_string(std::hash<std::string>{}(interface_name));
@@ -685,7 +694,7 @@ private:
     }
     
     void rsuScanLoop() {
-        while (scanning) {
+        while (scanning.load()) {
             scanForRSUs();
             cleanupOldRSUs();
             std::this_thread::sleep_for(rsu_scan_interval);
@@ -1060,7 +1069,7 @@ private:
  */
 class EVCommunicationController {
 public:
-    EVCommunicationController() {
+    EVCommunicationController() : shut_down_(false) {
         v2v_comm = std::make_unique<V2VCommunication>();
         v2i_comm = std::make_unique<V2ICommunication>();
         cellular_modem = std::make_unique<CellularModem>("5G");
@@ -1096,6 +1105,10 @@ public:
      * @brief Shutdown all communication systems
      */
     void shutdown() {
+        bool expected = false;
+        if (!shut_down_.compare_exchange_strong(expected, true)) {
+            return; // already shut down
+        }
         std::cout << "[CommController] Shutting down communication systems...\n";
         
         if (v2v_comm) v2v_comm->disconnect();
@@ -1172,6 +1185,7 @@ private:
     std::unique_ptr<CellularModem> cellular_modem;
     std::unique_ptr<MessageRouter> message_router;
     std::string vehicle_id;
+    std::atomic<bool> shut_down_;
     
     void initializeController() {
         vehicle_id = "EV_MAIN_" + std::to_string(std::hash<std::thread::id>{}(std::this_thread::get_id()));

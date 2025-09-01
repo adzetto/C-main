@@ -18,6 +18,7 @@
 #include "vehicle_connectivity.h"
 #include "security_monitoring.h"
 #include "advanced_powertrain_control.h"
+#include "ota_secure_update.h"
 
 class ElectricVehicle {
 private:
@@ -124,6 +125,11 @@ public:
     double getBatteryLevel() const { return batteryLevel; }
     double getCurrentSpeed() const { return currentSpeed; }
     bool getMovingStatus() const { return isMoving; }
+
+    void shutdownCommunications() {
+        // Ensure communication threads are stopped deterministically
+        comms_controller.shutdown();
+    }
 
     void simulateChargingSession() {
         std::cout << "\n--- Simulating ISO 15118 Charging Session ---\n";
@@ -352,6 +358,20 @@ public:
                             std::cout << "--- End Security Monitoring ---\n";
                     }
 
+    void simulateOTAUpdate() {
+        std::cout << "\n--- Simulating OTA Secure Update ---\n";
+        ota_secure_update::OTAManager ota("1.0.0");
+        ota_secure_update::UpdateBundle bundle{
+            "1.1.0",
+            "https://updates.example.com/ev/firmware_1_1_0.bin",
+            "SIG_FAKE_ABC123",
+            "HASH_FAKE_ABC123"
+        };
+        ota.startUpdate(bundle);
+        std::cout << "Current firmware version: " << ota.getCurrentVersion() << "\n";
+        std::cout << "--- End OTA Secure Update ---\n";
+    }
+
     void simulateMonitoring() {
         std::cout << "\n--- Simulating Real-Time Monitoring ---\n";
         system_monitor::RealTimeSystemMonitor monitor;
@@ -430,6 +450,8 @@ int main() {
             tesla.simulateConnectivity();
 
             tesla.simulateSecurityMonitoring();
+
+    tesla.simulateOTAUpdate();
     
     if (tesla.getBatteryLevel() < 50.0) {
         tesla.startCharging();
@@ -437,6 +459,8 @@ int main() {
     }
 
     tesla.simulateMonitoring();
+    // Gracefully stop communications before exit
+    tesla.shutdownCommunications();
     
     return 0;
 }
