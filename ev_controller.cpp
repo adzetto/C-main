@@ -3,6 +3,7 @@
 #include <vector>
 #include <chrono>
 #include <thread>
+#include "ev_communication_protocols.h"
 
 class ElectricVehicle {
 private:
