@@ -21,6 +21,9 @@
 #include "ota_secure_update.h"
 #include "energy_management.h"
 #include "dc_fast_charging_control.h"
+#include "route_mapping.h"
+#include "advanced_logging_framework.h"
+#include "advanced_data_analytics.h"
 
 class ElectricVehicle {
 private:
@@ -419,6 +422,53 @@ public:
         std::cout << "--- End DC Fast Charging Control ---\n";
     }
 
+    void simulateRouteMapping() {
+        std::cout << "\n--- Simulating Route Mapping ---\n";
+        routing::Graph g;
+        int a = g.add_node(0,0), b = g.add_node(5,0), c = g.add_node(5,5), d = g.add_node(0,5);
+        g.add_edge(a,b,5.0,true);
+        g.add_edge(b,c,5.0,true);
+        g.add_edge(a,d,5.0,false);
+        g.add_edge(d,c,5.0,false);
+        g.add_edge(a,c,8.0,true); // diagonal highway
+        routing::AStar astar;
+        auto path = astar.find_path(g, a, c);
+        std::cout << "Path nodes: ";
+        for (size_t i = 0; i < path.size(); ++i) {
+            std::cout << path[i] << (i + 1 < path.size() ? " -> " : "\n");
+        }
+        std::cout << "--- End Route Mapping ---\n";
+    }
+
+    void simulateAdvancedLogging() {
+        std::cout << "\n--- Simulating Advanced Logging ---\n";
+        using namespace logging_framework;
+        Logger* log = createLogger("ev");
+        log->start();
+        LOG_INFO(log, "Vehicle boot sequence started");
+        log->debug("Debug info: initializing subsystems", "init", "ev_controller");
+        log->warn("Low tire pressure detected", "safety", "tpms");
+        log->error("Communication timeout with module X", "network", "v2i");
+        std::cout << log->getStatus();
+        log->stop();
+        std::cout << "--- End Advanced Logging ---\n";
+    }
+
+    void simulateAdvancedDataAnalytics() {
+        std::cout << "\n--- Simulating Advanced Data Analytics ---\n";
+        analytics::AdvancedDataAnalyticsSystem ads;
+        ads.start();
+        for (int i = 0; i < 10; ++i) {
+            ads.ingestDataPoint(analytics::DataPoint("speed", 50 + i * 3));
+            ads.ingestDataPoint(analytics::DataPoint("soc", 80 - i * 1.2));
+        }
+        auto summary = ads.getStatisticalSummary("speed");
+        std::cout << "Speed mean: " << summary.mean << ", count: " << summary.count << "\n";
+        std::cout << ads.getSystemStatus();
+        ads.stop();
+        std::cout << "--- End Advanced Data Analytics ---\n";
+    }
+
     void simulateMonitoring() {
         std::cout << "\n--- Simulating Real-Time Monitoring ---\n";
         system_monitor::RealTimeSystemMonitor monitor;
@@ -501,6 +551,9 @@ int main() {
     tesla.simulateOTAUpdate();
     tesla.simulateEnergyManagement();
     tesla.simulateDCFastChargingControl();
+    tesla.simulateRouteMapping();
+    tesla.simulateAdvancedLogging();
+    tesla.simulateAdvancedDataAnalytics();
     
     if (tesla.getBatteryLevel() < 50.0) {
         tesla.startCharging();

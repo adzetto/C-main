@@ -743,4 +743,92 @@ inline std::string analytics::AdvancedDataAnalyticsSystem::getSystemStatus() con
     return status.str();
 }
 
+// ===== Inline implementations for real-time StreamProcessor =====
+inline void analytics::StreamProcessor::processStream() {
+    while (isRunning.load()) {
+        std::unique_lock<std::mutex> lock(bufferMutex);
+        bufferCondition.wait_for(lock, std::chrono::milliseconds(50), [this]{
+            return !streamBuffer.empty() || !isRunning.load();
+        });
+        while (!streamBuffer.empty()) {
+            auto point = streamBuffer.front();
+            streamBuffer.pop();
+            lock.unlock();
+            // dispatch
+            auto it = processors.find(point.key);
+            if (it != processors.end() && it->second) {
+                try { it->second(point); } catch (...) { /* swallow in stub */ }
+            }
+            lock.lock();
+        }
+    }
+}
+
+inline void analytics::StreamProcessor::start() {
+    if (isRunning.load()) return;
+    isRunning.store(true);
+    processingThread = std::thread(&StreamProcessor::processStream, this);
+}
+
+inline void analytics::StreamProcessor::stop() {
+    if (!isRunning.load()) return;
+    isRunning.store(false);
+    bufferCondition.notify_all();
+    if (processingThread.joinable()) processingThread.join();
+}
+
+inline void analytics::StreamProcessor::addDataPoint(const DataPoint& point) {
+    std::lock_guard<std::mutex> lock(bufferMutex);
+    if (streamBuffer.size() >= maxBufferSize) {
+        // drop oldest
+        streamBuffer.pop();
+    }
+    streamBuffer.push(point);
+    bufferCondition.notify_one();
+}
+
+inline void analytics::StreamProcessor::registerProcessor(const std::string& key, std::function<void(const DataPoint&)> processor) {
+    std::lock_guard<std::mutex> lock(bufferMutex);
+    processors[key] = std::move(processor);
+}
+
+inline void analytics::StreamProcessor::unregisterProcessor(const std::string& key) {
+    std::lock_guard<std::mutex> lock(bufferMutex);
+    processors.erase(key);
+}
+
+inline size_t analytics::StreamProcessor::getBufferSize() const {
+    std::lock_guard<std::mutex> lock(const_cast<std::mutex&>(bufferMutex));
+    return streamBuffer.size();
+}
+
+inline void analytics::StreamProcessor::clearBuffer() {
+    std::lock_guard<std::mutex> lock(bufferMutex);
+    while (!streamBuffer.empty()) streamBuffer.pop();
+}
+
+// ===== Inline implementations for AdvancedDataAnalyticsSystem loop and helpers =====
+inline void analytics::AdvancedDataAnalyticsSystem::runMainAnalytics() {
+    while (systemRunning.load()) {
+        // In a full implementation, we would perform periodic analysis
+        // Here, keep it lightweight to avoid heavy CPU usage
+        std::this_thread::sleep_for(config.processingInterval);
+        performScheduledAnalysis();
+        if (config.enablePredictiveAnalytics) updatePredictiveModels();
+        if (config.enableAnomalyDetection) checkForAnomalies();
+    }
+}
+
+inline void analytics::AdvancedDataAnalyticsSystem::performScheduledAnalysis() {
+    // Placeholder: aggregate stats or rollups
+}
+
+inline void analytics::AdvancedDataAnalyticsSystem::updatePredictiveModels() {
+    // Placeholder: retrain or refresh cached predictions
+}
+
+inline void analytics::AdvancedDataAnalyticsSystem::checkForAnomalies() {
+    // Placeholder: run quick anomaly checks
+}
+
 #endif // ADVANCED_DATA_ANALYTICS_H
