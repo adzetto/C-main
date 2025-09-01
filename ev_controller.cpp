@@ -10,6 +10,7 @@
 #include "fleet_telematics.h"
 #include "predictive_maintenance.h"
 #include "v2g_grid_integration.h"
+#include "functional_safety.h"
 
 class ElectricVehicle {
 private:
@@ -209,6 +210,26 @@ public:
         std::cout << "--- End V2G Grid Integration---\n";
     }
 
+    void simulateFunctionalSafety() {
+        std::cout << "\n--- Simulating Functional Safety ---\n";
+        functional_safety::SafetyManager safety_manager("BrakingSystem", functional_safety::ASIL::D);
+
+        safety_manager.execute([this]() {
+            std::cout << "Executing critical braking operation...\n";
+            this->brake();
+        }, functional_safety::ASIL::D);
+
+        // Simulate a fault
+        safety_manager.reportError("Sensor reading out of range");
+        std::cout << "Safety state after error: " << static_cast<int>(safety_manager.getSafetyState()) << "\n";
+
+        safety_manager.execute([this]() {
+            std::cout << "Attempting to execute operation in degraded state...\n";
+        }, functional_safety::ASIL::C);
+
+        std::cout << "--- End Functional Safety ---\n";
+    }
+
     void simulateMonitoring() {
         std::cout << "\n--- Simulating Real-Time Monitoring ---\n";
         system_monitor::RealTimeSystemMonitor monitor;
@@ -273,6 +294,8 @@ int main() {
     tesla.simulatePredictiveMaintenance();
 
     tesla.simulateV2G();
+
+    tesla.simulateFunctionalSafety();
     
     if (tesla.getBatteryLevel() < 50.0) {
         tesla.startCharging();
