@@ -7,6 +7,7 @@
 #include "iso15118_ccs.h"
 #include "realtime_system_monitor.h"
 #include "advanced_bms.h"
+#include "fleet_telematics.h"
 
 class ElectricVehicle {
 private:
@@ -144,20 +145,8 @@ public:
         std::cout << "--- End Charging Session ---\n";
     }
 
-    void simulateMonitoring() {
-        std::cout << "\n--- Simulating Real-Time Monitoring ---\\n";
-        system_monitor::RealTimeSystemMonitor monitor;
-        monitor.initialize();
-        monitor.start();
-        std::this_thread::sleep_for(std::chrono::seconds(2));
-        std::cout << monitor.getSystemStatus();
-        monitor.stop();
-        monitor.shutdown();
-        std::cout << "--- End Monitoring---\\n";
-    }
-
     void simulateAdvancedBMS() {
-        std::cout << "\n--- Simulating Advanced BMS ---\\n";
+        std::cout << "\n--- Simulating Advanced BMS ---\n";
         AdvancedBMS bms;
         bms.setPackCurrent(isCharging ? 25.0 : -50.0);
         bms.updateAllCells();
@@ -165,7 +154,41 @@ public:
         bms.checkSystemFaults();
         bms.displayDetailedStatus();
         bms.displayCellDetails(0, 10);
-        std::cout << "--- End Advanced BMS---\\n";
+        std::cout << "--- End Advanced BMS---\n";
+    }
+
+    void simulateFleetTelematics() {
+        std::cout << "\n--- Simulating Fleet Telematics ---\n";
+        fleet_telematics::FleetManager fleet_manager;
+        fleet_manager.addVehicle(model);
+        fleet_manager.startAllTelematics("tcp://telematics.example.com:1234", 5);
+
+        auto vehicle_telematics = fleet_manager.getVehicle(model);
+        if (vehicle_telematics) {
+            fleet_telematics::VehicleDataSnapshot snapshot;
+            snapshot.vehicleId = model;
+            snapshot.location = {47.6, -122.3, 50.0, currentSpeed};
+            snapshot.battery_soc = batteryLevel;
+            snapshot.motor_temp_c = 65.0;
+            snapshot.system_health_score = 95.0;
+            vehicle_telematics->updateVehicleData(snapshot);
+        }
+
+        std::this_thread::sleep_for(std::chrono::seconds(6));
+        fleet_manager.stopAllTelematics();
+        std::cout << "--- End Fleet Telematics ---\n";
+    }
+
+    void simulateMonitoring() {
+        std::cout << "\n--- Simulating Real-Time Monitoring ---\n";
+        system_monitor::RealTimeSystemMonitor monitor;
+        monitor.initialize();
+        monitor.start();
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+        std::cout << monitor.getSystemStatus();
+        monitor.stop();
+        monitor.shutdown();
+        std::cout << "--- End Monitoring---\n";
     }
 
     void simulateCommunications() {
@@ -214,6 +237,8 @@ int main() {
     tesla.simulateChargingSession();
 
     tesla.simulateAdvancedBMS();
+
+    tesla.simulateFleetTelematics();
     
     if (tesla.getBatteryLevel() < 50.0) {
         tesla.startCharging();
