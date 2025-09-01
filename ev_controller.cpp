@@ -11,6 +11,7 @@
 #include "predictive_maintenance.h"
 #include "v2g_grid_integration.h"
 #include "functional_safety.h"
+#include "advanced_ai_systems.h"
 
 class ElectricVehicle {
 private:
@@ -230,6 +231,29 @@ public:
         std::cout << "--- End Functional Safety ---\n";
     }
 
+    void simulateAdvancedAI() {
+        std::cout << "\n--- Simulating Advanced AI Systems ---\n";
+        ai_systems::AISystemsController ai_controller;
+        ai_controller.initialize();
+
+        // Simulate computer vision
+        ai_systems::ImageData image(1280, 720);
+        auto detected_objects = ai_controller.getComputerVision()->processImage(image);
+        std::cout << "Detected " << detected_objects.size() << " objects.\n";
+
+        // Simulate NLP
+        auto nlp_result = ai_controller.getNLPSystem()->processVoiceCommand("Navigate to home");
+        std::cout << "NLP Intent: " << nlp_result["intent"] << ", Response: " << nlp_result["response"] << "\n";
+
+        // Simulate decision making
+        std::map<std::string, double> vehicle_state = {{"speed", currentSpeed}, {"battery", batteryLevel}};
+        std::string decision = ai_controller.getDecisionEngine()->makeDecision(ai_systems::DrivingScenario::CITY_DRIVING, detected_objects, vehicle_state);
+        std::cout << "AI Decision: " << decision << "\n";
+
+        ai_controller.shutdown();
+        std::cout << "--- End Advanced AI Systems ---\n";
+    }
+
     void simulateMonitoring() {
         std::cout << "\n--- Simulating Real-Time Monitoring ---\n";
         system_monitor::RealTimeSystemMonitor monitor;
@@ -296,6 +320,8 @@ int main() {
     tesla.simulateV2G();
 
     tesla.simulateFunctionalSafety();
+
+    tesla.simulateAdvancedAI();
     
     if (tesla.getBatteryLevel() < 50.0) {
         tesla.startCharging();
