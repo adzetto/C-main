@@ -8,6 +8,7 @@
 #include "realtime_system_monitor.h"
 #include "advanced_bms.h"
 #include "fleet_telematics.h"
+#include "predictive_maintenance.h"
 
 class ElectricVehicle {
 private:
@@ -179,6 +180,21 @@ public:
         std::cout << "--- End Fleet Telematics ---\n";
     }
 
+    void simulatePredictiveMaintenance() {
+        std::cout << "\n--- Simulating Predictive Maintenance ---\n";
+        predictive_maintenance::MaintenanceManager maintenance_manager;
+        maintenance_manager.trainAllModels();
+
+        predictive_maintenance::ComponentDataPoint battery_data = {2500, 45.0, 60.0, 5};
+        auto battery_prediction = maintenance_manager.analyzeComponent("BatterySystem", battery_data);
+        std::cout << "Battery RUL: " << battery_prediction.remaining_useful_life_hours << " hours, Recommendation: " << battery_prediction.recommendation << "\n";
+
+        predictive_maintenance::ComponentDataPoint motor_data = {2500, 80.0, 75.0, 2};
+        auto motor_prediction = maintenance_manager.analyzeComponent("MotorAssembly", motor_data);
+        std::cout << "Motor RUL: " << motor_prediction.remaining_useful_life_hours << " hours, Recommendation: " << motor_prediction.recommendation << "\n";
+        std::cout << "--- End Predictive Maintenance ---\n";
+    }
+
     void simulateMonitoring() {
         std::cout << "\n--- Simulating Real-Time Monitoring ---\n";
         system_monitor::RealTimeSystemMonitor monitor;
@@ -239,6 +255,8 @@ int main() {
     tesla.simulateAdvancedBMS();
 
     tesla.simulateFleetTelematics();
+
+    tesla.simulatePredictiveMaintenance();
     
     if (tesla.getBatteryLevel() < 50.0) {
         tesla.startCharging();
