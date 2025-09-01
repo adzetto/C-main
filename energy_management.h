@@ -12,6 +12,8 @@
 #include <unordered_map>
 #include <string>
 #include <chrono>
+#include <thread>
+#include <ctime>
 #include <memory>
 #include <algorithm>
 #include <cmath>
@@ -808,12 +810,14 @@ private:
         
         // Typical daily pattern: low at night, peaks in evening
         for (int hour = 0; hour < 24; hour++) {
+            // Define PI locally to avoid platform-specific M_PI issues
+            constexpr double PI = 3.14159265358979323846;
             if (hour >= 0 && hour < 6) {
-                demandForecast[hour] = 0.3 + 0.1 * sin(hour * M_PI / 12.0);
+                demandForecast[hour] = 0.3 + 0.1 * sin(hour * PI / 12.0);
             } else if (hour >= 6 && hour < 18) {
-                demandForecast[hour] = 0.6 + 0.2 * sin((hour - 6) * M_PI / 12.0);
+                demandForecast[hour] = 0.6 + 0.2 * sin((hour - 6) * PI / 12.0);
             } else {
-                demandForecast[hour] = 0.8 + 0.2 * sin((hour - 18) * M_PI / 6.0);
+                demandForecast[hour] = 0.8 + 0.2 * sin((hour - 18) * PI / 6.0);
             }
         }
     }

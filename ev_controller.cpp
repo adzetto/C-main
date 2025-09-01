@@ -19,6 +19,8 @@
 #include "security_monitoring.h"
 #include "advanced_powertrain_control.h"
 #include "ota_secure_update.h"
+#include "energy_management.h"
+#include "dc_fast_charging_control.h"
 
 class ElectricVehicle {
 private:
@@ -372,6 +374,51 @@ public:
         std::cout << "--- End OTA Secure Update ---\n";
     }
 
+    void simulateEnergyManagement() {
+        std::cout << "\n--- Simulating Energy Management ---\n";
+        EnergyManagementSystem ems(82.0);
+        ems.setSOC(67.5);
+        ems.setDrivingMode(DrivingMode::ECO);
+
+    // Build a simple route
+    std::vector<RouteSegment> route;
+    RouteSegment s1; s1.distance = 15.0; s1.elevation = 50.0; s1.speedLimit = 100.0; s1.trafficFactor = 1.0; s1.roadType = "highway"; s1.weatherFactor = 1.0; route.push_back(s1);
+    RouteSegment s2; s2.distance = 5.0; s2.elevation = -20.0; s2.speedLimit = 60.0; s2.trafficFactor = 1.2; s2.roadType = "city"; s2.weatherFactor = 1.1; route.push_back(s2);
+    RouteSegment s3; s3.distance = 30.0; s3.elevation = 120.0; s3.speedLimit = 110.0; s3.trafficFactor = 0.9; s3.roadType = "highway"; s3.weatherFactor = 1.0; route.push_back(s3);
+        auto prediction = ems.planRoute(route);
+
+        // Grid conditions and charging plan
+        ems.updateGridConditions(0.85, 0.18, 0.35);
+        ems.planChargingSession(80.0, 1.5);
+        ems.executeChargingSession();
+
+        // Simulate power usage snapshot
+        ems.updateEnergyConsumption(45.0, 5.0);
+        ems.displaySystemStatus();
+        std::cout << "--- End Energy Management ---\n";
+    }
+
+    void simulateDCFastChargingControl() {
+        std::cout << "\n--- Simulating DC Fast Charging Control ---\n";
+        dcfc::Controller ctrl;
+        dcfc::Limits lim{920.0, 500.0, 250.0};
+        ctrl.set_limits(lim);
+        double v = 400.0, c = 0.0; // measurements
+        for (int i = 0; i < 5; ++i) {
+            auto sp = ctrl.track_power(150.0, v, c, 0.1);
+            // naive plant: move v,c slightly toward commands
+            v += (sp.v - v) * 0.25;
+            c += (sp.c - c) * 0.25;
+            auto th = ctrl.cool_step(35.0 + i*2);
+            std::cout << "Step " << i
+                      << ": v_cmd=" << sp.v
+                      << ", c_cmd=" << sp.c
+                      << ", fan=" << th.fan_pct << "%\n";
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
+        std::cout << "--- End DC Fast Charging Control ---\n";
+    }
+
     void simulateMonitoring() {
         std::cout << "\n--- Simulating Real-Time Monitoring ---\n";
         system_monitor::RealTimeSystemMonitor monitor;
@@ -452,6 +499,8 @@ int main() {
             tesla.simulateSecurityMonitoring();
 
     tesla.simulateOTAUpdate();
+    tesla.simulateEnergyManagement();
+    tesla.simulateDCFastChargingControl();
     
     if (tesla.getBatteryLevel() < 50.0) {
         tesla.startCharging();
