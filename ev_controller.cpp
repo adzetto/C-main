@@ -13,11 +13,18 @@ private:
     double currentSpeed;
     bool isCharging;
     bool isMoving;
+    ev_communication::EVCommunicationController comms_controller;
     
 public:
     ElectricVehicle(std::string m, double maxSpd) : 
         model(m), batteryLevel(100.0), maxSpeed(maxSpd), 
-        currentSpeed(0.0), isCharging(false), isMoving(false) {}
+        currentSpeed(0.0), isCharging(false), isMoving(false) {
+            comms_controller.initialize();
+        }
+    
+    ~ElectricVehicle() {
+        comms_controller.shutdown();
+    }
     
     void startEngine() {
         if (batteryLevel > 5.0) {
@@ -92,12 +99,37 @@ public:
         std::cout << "Max Speed: " << maxSpeed << " km/h\n";
         std::cout << "Engine: " << (isMoving ? "ON" : "OFF") << "\n";
         std::cout << "Charging: " << (isCharging ? "YES" : "NO") << "\n";
+        
+        auto comm_status = comms_controller.getCommStatus();
+        std::cout << "--- Communication Status ---\n";
+        for(const auto& pair : comm_status) {
+            std::cout << pair.first << ": " << pair.second << "\n";
+        }
         std::cout << "========================\n\n";
     }
     
     double getBatteryLevel() const { return batteryLevel; }
     double getCurrentSpeed() const { return currentSpeed; }
     bool getMovingStatus() const { return isMoving; }
+
+    void simulateCommunications() {
+        std::cout << "\n--- Simulating Communications ---\n";
+        comms_controller.sendEmergencyAlert("ACCIDENT_AHEAD", "Multi-vehicle collision on I-5 North");
+        
+        if (comms_controller.getV2IComm() && comms_controller.getV2IComm()->isConnected()) {
+            comms_controller.getV2IComm()->requestTrafficSignalInfo("INTERSECTION_123");
+        }
+
+        if (comms_controller.getCellularModem() && comms_controller.getCellularModem()->isConnected()) {
+            std::map<std::string, double> telemetry_data = {
+                {"speed", currentSpeed},
+                {"battery", batteryLevel},
+                {"odometer", 25100.5}
+            };
+            comms_controller.getCellularModem()->sendTelemetryData(telemetry_data);
+        }
+        std::cout << "--- End Simulation ---\n";
+    }
 };
 
 int main() {
@@ -111,6 +143,8 @@ int main() {
     tesla.startEngine();
     tesla.accelerate(80);
     tesla.displayStatus();
+    
+    tesla.simulateCommunications();
     
     tesla.accelerate(150);
     tesla.displayStatus();
