@@ -14,6 +14,9 @@
 #include "advanced_ai_systems.h"
 #include "advanced_powertrain_control.h"
 #include "can_bus_system.h"
+#include "vehicle_diagnostics.h"
+#include "vehicle_connectivity.h"
+#include "security_monitoring.h"
 #include "advanced_powertrain_control.h"
 
 class ElectricVehicle {
@@ -34,7 +37,6 @@ public:
         }
     
     ~ElectricVehicle() {
-        comms_controller.shutdown();
     }
     
     void startEngine() {
@@ -296,6 +298,60 @@ public:
                 std::cout << "--- End CAN Bus ---\n";
         }
 
+            void simulateDiagnostics() {
+                    std::cout << "\n--- Simulating Vehicle Diagnostics ---\n";
+                    VehicleDiagnosticsSystem diag;
+                    DTCManager dtc_mgr;
+                    DataLogger logger;
+                    RemoteDiagnostics remote;
+
+                    // Set a few DTCs (stubbed)
+                    dtc_mgr.set_dtc({"P0A1F", "Battery control module fault"});
+                    dtc_mgr.set_dtc({"C0035", "Left front wheel speed sensor"});
+
+                    // Log some data
+                    logger.log_data("Speed=" + std::to_string(currentSpeed));
+                    logger.log_data("SOC=" + std::to_string(batteryLevel));
+
+                    // Remote request
+                    remote.handle_request("READ_DTC");
+
+                    // Fetch and print (stubbed empty in header)
+                    auto all = dtc_mgr.get_all_dtcs();
+                    std::cout << "Recorded DTC count: " << all.size() << "\n";
+                    std::cout << "--- End Vehicle Diagnostics ---\n";
+            }
+
+                void simulateConnectivity() {
+                        std::cout << "\n--- Simulating Vehicle Connectivity ---\n";
+                        VehicleConnectivitySystem vcs(model);
+                        vcs.start();
+                        // Update vehicle status a few times
+                        vcs.updateVehicleStatus(currentSpeed, 0.0);
+                        vcs.requestTrafficData();
+                        vcs.requestWeatherData();
+                        vcs.checkForUpdates();
+                        vcs.displaySystemStatus();
+                        vcs.stop();
+                        std::cout << "--- End Vehicle Connectivity ---\n";
+                }
+
+                    void simulateSecurityMonitoring() {
+                            std::cout << "\n--- Simulating Security Monitoring ---\n";
+                            secmon::SecurityMonitor mon;
+                            mon.add_rule("CAN_FLOOD", secmon::Severity::CRITICAL);
+                            mon.add_rule("UNAUTH_REMOTE", secmon::Severity::ALERT);
+                            mon.add_rule("LOW_BATT_TAMPER", secmon::Severity::WARN);
+
+                            mon.observe("CAN", "CAN_FLOOD");
+                            mon.observe("Connectivity", "UNAUTH_REMOTE", "suspicious token");
+                            mon.observe("Sensors", "LOW_BATT_TAMPER");
+
+                            mon.report();
+                            mon.clear();
+                            std::cout << "--- End Security Monitoring ---\n";
+                    }
+
     void simulateMonitoring() {
         std::cout << "\n--- Simulating Real-Time Monitoring ---\n";
         system_monitor::RealTimeSystemMonitor monitor;
@@ -368,6 +424,12 @@ int main() {
     tesla.simulateAdvancedPowertrain();
 
         tesla.simulateCANBus();
+
+        tesla.simulateDiagnostics();
+
+            tesla.simulateConnectivity();
+
+            tesla.simulateSecurityMonitoring();
     
     if (tesla.getBatteryLevel() < 50.0) {
         tesla.startCharging();
