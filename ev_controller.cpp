@@ -6,6 +6,7 @@
 #include "ev_communication_protocols.h"
 #include "iso15118_ccs.h"
 #include "realtime_system_monitor.h"
+#include "advanced_bms.h"
 
 class ElectricVehicle {
 private:
@@ -144,7 +145,7 @@ public:
     }
 
     void simulateMonitoring() {
-        std::cout << "\n--- Simulating Real-Time Monitoring ---\n";
+        std::cout << "\n--- Simulating Real-Time Monitoring ---\\n";
         system_monitor::RealTimeSystemMonitor monitor;
         monitor.initialize();
         monitor.start();
@@ -152,7 +153,19 @@ public:
         std::cout << monitor.getSystemStatus();
         monitor.stop();
         monitor.shutdown();
-        std::cout << "--- End Monitoring ---\n";
+        std::cout << "--- End Monitoring---\\n";
+    }
+
+    void simulateAdvancedBMS() {
+        std::cout << "\n--- Simulating Advanced BMS ---\\n";
+        AdvancedBMS bms;
+        bms.setPackCurrent(isCharging ? 25.0 : -50.0);
+        bms.updateAllCells();
+        bms.performCellBalancing();
+        bms.checkSystemFaults();
+        bms.displayDetailedStatus();
+        bms.displayCellDetails(0, 10);
+        std::cout << "--- End Advanced BMS---\\n";
     }
 
     void simulateCommunications() {
@@ -199,6 +212,8 @@ int main() {
     tesla.stopEngine();
 
     tesla.simulateChargingSession();
+
+    tesla.simulateAdvancedBMS();
     
     if (tesla.getBatteryLevel() < 50.0) {
         tesla.startCharging();
