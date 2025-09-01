@@ -4,6 +4,7 @@
 #include <chrono>
 #include <thread>
 #include "ev_communication_protocols.h"
+#include "iso15118_ccs.h"
 
 class ElectricVehicle {
 private:
@@ -112,6 +113,35 @@ public:
     double getCurrentSpeed() const { return currentSpeed; }
     bool getMovingStatus() const { return isMoving; }
 
+    void simulateChargingSession() {
+        std::cout << "\n--- Simulating ISO 15118 Charging Session ---\n";
+        iso15118::ISO15118Stack iso_stack;
+        if (!iso_stack.connect()) {
+            std::cout << "SLAC association failed!\n";
+            return;
+        }
+
+        iso15118::EVRequest ev_req;
+        iso15118::EVSEOffer evse_offer;
+        iso_stack.start(ev_req, evse_offer);
+
+        iso15118::Certificate cert = {"EV_CERT", "OEM_CA", "12345", std::chrono::system_clock::now(), std::chrono::system_clock::now() + std::chrono::hours(24*365)};
+        iso_stack.provide_certificate(cert);
+        iso_stack.authenticate();
+
+        if (iso_stack.state() == iso15118::SessionState::CHARGING) {
+            std::cout << "Authentication successful. Starting charge.\n";
+            double target_kw = 50.0;
+            iso15118::MeterInfo meter_info = iso_stack.deliver(target_kw);
+            std::cout << "Charging at " << meter_info.power << " kW\n";
+        } else {
+            std::cout << "Authentication failed!\n";
+        }
+
+        iso_stack.teardown();
+        std::cout << "--- End Charging Session ---\n";
+    }
+
     void simulateCommunications() {
         std::cout << "\n--- Simulating Communications ---\n";
         comms_controller.sendEmergencyAlert("ACCIDENT_AHEAD", "Multi-vehicle collision on I-5 North");
@@ -154,6 +184,8 @@ int main() {
     tesla.displayStatus();
     
     tesla.stopEngine();
+
+    tesla.simulateChargingSession();
     
     if (tesla.getBatteryLevel() < 50.0) {
         tesla.startCharging();
