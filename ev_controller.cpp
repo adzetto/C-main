@@ -12,6 +12,7 @@
 #include "v2g_grid_integration.h"
 #include "functional_safety.h"
 #include "advanced_ai_systems.h"
+#include "advanced_powertrain_control.h"
 
 class ElectricVehicle {
 private:
@@ -254,6 +255,19 @@ public:
         std::cout << "--- End Advanced AI Systems ---\n";
     }
 
+    void simulateAdvancedPowertrain() {
+        std::cout << "\n--- Simulating Advanced Powertrain Control ---\n";
+        AdvancedPowertrainControl powertrain_control;
+        powertrain_control.enablePowertrain();
+        powertrain_control.setDriveMode(AdvancedPowertrainControl::DriveMode::SPORT);
+        float wheel_speeds[4] = {50.0f, 50.0f, 50.0f, 50.0f};
+        powertrain_control.updateVehicleDynamics(50.0f, wheel_speeds, 0.1f, 0.05f);
+        powertrain_control.requestTorque(200.0f);
+        powertrain_control.getSystemStatus();
+        powertrain_control.disablePowertrain();
+        std::cout << "--- End Advanced Powertrain Control ---\n";
+    }
+
     void simulateMonitoring() {
         std::cout << "\n--- Simulating Real-Time Monitoring ---\n";
         system_monitor::RealTimeSystemMonitor monitor;
@@ -322,6 +336,8 @@ int main() {
     tesla.simulateFunctionalSafety();
 
     tesla.simulateAdvancedAI();
+
+    tesla.simulateAdvancedPowertrain();
     
     if (tesla.getBatteryLevel() < 50.0) {
         tesla.startCharging();
