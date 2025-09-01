@@ -9,6 +9,7 @@
 #include "advanced_bms.h"
 #include "fleet_telematics.h"
 #include "predictive_maintenance.h"
+#include "v2g_grid_integration.h"
 
 class ElectricVehicle {
 private:
@@ -195,6 +196,19 @@ public:
         std::cout << "--- End Predictive Maintenance ---\n";
     }
 
+    void simulateV2G() {
+        std::cout << "\n--- Simulating V2G Grid Integration ---\n";
+        v2g_grid_integration::GridSimulator grid_sim;
+        v2g_grid_integration::V2GManager v2g_manager(100.0, 50.0, 10.0);
+
+        for (int i = 0; i < 3; ++i) {
+            auto grid_status = grid_sim.getCurrentStatus();
+            v2g_manager.decide(grid_status, batteryLevel, 50.0);
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+        std::cout << "--- End V2G Grid Integration---\n";
+    }
+
     void simulateMonitoring() {
         std::cout << "\n--- Simulating Real-Time Monitoring ---\n";
         system_monitor::RealTimeSystemMonitor monitor;
@@ -257,6 +271,8 @@ int main() {
     tesla.simulateFleetTelematics();
 
     tesla.simulatePredictiveMaintenance();
+
+    tesla.simulateV2G();
     
     if (tesla.getBatteryLevel() < 50.0) {
         tesla.startCharging();
